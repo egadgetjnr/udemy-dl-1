@@ -13,6 +13,7 @@ from pprint import pprint
 from udemy.colorized import *
 from udemy import __author__
 from udemy import __version__
+from slugify import slugify
 
 from udemy.colorized.banner import banner
 
@@ -24,7 +25,11 @@ use_cached_creds    = udemy.use_cached_credentials
 
 class UdemyDownload:
 
-    def __init__(self, url, username, password, list_down=False, save_links=False, outto=None, quality=None):
+    def safeencode(unsafetext):
+        text = slugify(unsafetext,lower=False,spaces=True,ok=SLUG_OK + '().')
+        return text
+
+    def __init__(self, url, username, password, list_down=False, save_links=False, outto=None, quality=None, safe_names=False):
         self.url        = url
         self.username   = username
         self.password   = password
@@ -32,6 +37,7 @@ class UdemyDownload:
         self.save       = save_links
         self.outto      = outto
         self.quality    = quality
+        self.safe_names = safe_names
         
 
 
@@ -265,9 +271,8 @@ class UdemyDownload:
                                     print  (fy + sb + "|" + fg + sd + "     {:<6} {:<8} {:<7} {:<10} {:<7}{:<9}{}{}|".format(sid, media, Format , str(quality) + 'p', sz, in_MB, fy, sb))
                                     i += 1
                                 print  (fy + sb + "+--------------------------------------------------------+")
-
         
-    def ExtractAndDownload(self, path=None, quality=None,  default=False, caption_only=False, skip_captions=False):
+    def ExtractAndDownload(self, path=None, quality=None,  default=False, caption_only=False, skip_captions=False, safe_names=False):
         current_dir = os.getcwd()
         print (fc + sd + "[" + fm + sb + "*" + fc + sd + "] : " + fg + sd + "Downloading webpage..")
         print (fc + sd + "[" + fm + sb + "*" + fc + sd + "] : " + fg + sd + "Extracting course information..")
@@ -279,6 +284,10 @@ class UdemyDownload:
         else:
             course_path = "%s\\%s" % (path, extract_info.match_id(self.url)) if os.name == 'nt' else "%s/%s" % (path, extract_info.match_id(self.url))
             course_name = course_path
+
+        if safe_names:
+            course_path = safeencode(course_path)
+            course_name = safeencode(course_name)
             
         print (fc + sd + "[" + fm + sb + "*" + fc + sd + "] : " + fg + sb + "Downloading " + fb + sb + "'%s'." % (course.replace('-',' ')))
         self.login()
@@ -292,22 +301,34 @@ class UdemyDownload:
             for chap in sorted(videos_dict):
                 print (fc + sd + "[" + fm + sb + "*" + fc + sd + "] : " + fm + sb + "Downloading chapter : (%s of %s)" % (j, len(videos_dict)))
                 print (fc + sd + "[" + fw + sb + "+" + fc + sd + "] : " + fw + sd + "Chapter (%s)" % (chap))
-                chapter_path = course_path + '\\' + chap if os.name == 'nt' else course_path + '/' + chap
+                if(safe_names):
+                    chapter_path = course_path + '\\' + safeencode(chap) if os.name == 'nt' else course_path + '/' + safeencode(chap)
+                else:
+                    chapter_path = course_path + '\\' + chap if os.name == 'nt' else course_path + '/' + chap
                 try:
                     os.makedirs(chapter_path)
                 except  Exception as e:
                     pass
-                chapter_path = course_name + '\\' + chap if os.name == 'nt' else course_name + '/' + chap
+                if(safe_names):
+                    chapter_path = course_name + '\\' + safeencode(chap) if os.name == 'nt' else course_name + '/' + safeencode(chap)
+                else:
+                    chapter_path = course_name + '\\' + chap if os.name == 'nt' else course_name + '/' + chap
                 if os.path.exists(chapter_path):
                     os.chdir(chapter_path)
                 print (fc + sd + "[" + fm + sb + "+" + fc + sd + "] : " + fc + sd + "Found ('%s') lecture(s)." % (len(videos_dict[chap])))
                 i = 1
                 for lecture_name,urls in sorted(videos_dict[chap].items()):
                     try:
-                        _file           = urls.get('file')
-                        _external_url   = urls.get('external_url')
-                        _subtitle       = urls.get('subtitle')
-                        _view_html      = urls.get('view_html')
+                        if safe_names:
+                            _file           = safeencode(urls.get('file'))
+                            _external_url   = safeencode(urls.get('external_url'))
+                            _subtitle       = safeencode(urls.get('subtitle'))
+                            _view_html      = safeencode(urls.get('view_html'))
+                        else:
+                            _file           = urls.get('file')
+                            _external_url   = urls.get('external_url')
+                            _subtitle       = urls.get('subtitle')
+                            _view_html      = urls.get('view_html')
                     except AttributeError as e:
                         pass
                     else:
@@ -441,7 +462,7 @@ def main():
     print (ban)
     usage       = '''%prog [-h] [-u "username"] [-p "password"] COURSE_URL
                    [-s] [-l] [-r "resolution"] [-o "/path/to/directory/"] 
-                   [-d] [-c/--configs] [--sub-only] [--skip-sub]'''
+                   [-d] [-c/--configs] [--sub-only] [--skip-sub] [--safe-names]'''
     version     = "%prog version {}".format(__version__)
     description = 'A cross-platform python based utility to download courses from udemy for personal offline use.'
     parser = optparse.OptionParser(usage=usage,version=version,conflict_handler="resolve", description=description)
@@ -498,6 +519,11 @@ def main():
         action='store_true',
         dest='output',\
         help="Output directory where the videos will be saved, default is current directory.")
+    downloader.add_option(
+        "-n", "--safe-names", 
+        action='store_true',
+        dest='safe_names',\
+        help="Substitute unsafe characters with a \'_\'.")
 
     other   = optparse.OptionGroup(parser, "Others")
     other.add_option(
