@@ -91,7 +91,10 @@ class UdemyDownload:
         self.Progress(Receiving, TotalSize, fileSize = str(Size) + str(SGb_SMb) , downloaded = str(Received) + str(RGb_RMb), rate = str(dls) + str(Mb_kB), suffix = str(eta), barLength = 40)
 
     def Downloader(self, url, title, path):
-        out = course_dl.download(url, title, filepath=path, quiet=True, callback=self.Download)
+        if safe_names:
+            out = course_dl.download(url, safeencode(title), filepath=path, quiet=True, callback=self.Download)
+        else:
+            out = course_dl.download(url, title, filepath=path, quiet=True, callback=self.Download)
         if out == 'EXISTS':
             return ('already_exist')
         elif out == 401:
@@ -390,7 +393,10 @@ class UdemyDownload:
                             if _suburl == _url:
                                 print (fc + sd + "\n[" + fm + sb + "*" + fc + sd + "] : " + fg + sd + "Downloading subtitle .. ")
                                 print (fc + sd + "[" + fm + sb + "*" + fc + sd + "] : " + fg + sd + "Downloading (%s)" % (lecture_name))
-                                out = self.Downloader(_url, lecture_name, chapter_path)
+                                if safe_names:
+                                    out = self.Downloader(_url, safeencode(lecture_name), chapter_path)
+                                else:
+                                    out = self.Downloader(_url, lecture_name, chapter_path)
                                 if out == 'already_exist':
                                     print (fc + sd + "[" + fm + sb + "*" + fc + sd + "] : " + fg + sd + "Lecture : '%s' " % (lecture_name) + fy + sb + "(already downloaded).")
                                 else:
@@ -402,7 +408,10 @@ class UdemyDownload:
                             if _suburl != _url:
                                 print (fc + sd + "\n[" + fm + sb + "*" + fc + sd + "] : " + fg + sd + "Downloading lecture : (%s of %s)" % (i, len(videos_dict[chap])))
                                 print (fc + sd + "[" + fm + sb + "*" + fc + sd + "] : " + fg + sd + "Downloading (%s)" % (lecture_name))
-                                out = self.Downloader(_url, lecture_name, chapter_path)
+                                if safe_names:
+                                    out = self.Downloader(_url, safeencode(lecture_name), chapter_path)
+                                else:
+                                    out = self.Downloader(_url, lecture_name, chapter_path)
                                 if out == 'already_exist':
                                     print (fc + sd + "[" + fm + sb + "*" + fc + sd + "] : " + fg + sd + "Lecture : '%s' " % (lecture_name) + fy + sb + "(already downloaded).")
                                 else:
@@ -412,7 +421,10 @@ class UdemyDownload:
                         else:
                             print (fc + sd + "\n[" + fm + sb + "*" + fc + sd + "] : " + fg + sd + "Downloading lecture : (%s of %s)" % (i, len(videos_dict[chap])))
                             print (fc + sd + "[" + fm + sb + "*" + fc + sd + "] : " + fg + sd + "Downloading (%s)" % (lecture_name))
-                            out = self.Downloader(_url, lecture_name, chapter_path)
+                            if safe_names:
+                                out = self.Downloader(_url, safeencode(lecture_name), chapter_path)
+                            else:
+                                out = self.Downloader(_url, lecture_name, chapter_path)
                             if out == 'already_exist':
                                 print (fc + sd + "[" + fm + sb + "*" + fc + sd + "] : " + fg + sd + "Lecture : '%s' " % (lecture_name) + fy + sb + "(already downloaded).")
                             else:
